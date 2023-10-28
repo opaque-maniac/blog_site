@@ -1,7 +1,14 @@
 from django.urls import path
-from .views import SignUpView
+
+from .views import register
+from .views import login
+from .views import logout
+
+app_name = 'accounts'
 
 #urls for this app
 urlpatterns = [
-    path('signup/', SignUpView.as_view(), name='signup'),
+    path('signup/', register, name='signup'),
+    path('login/', login, name='login'),
+    path('logout/', logout, name='logout'),
 ]

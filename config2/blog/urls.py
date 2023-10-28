@@ -5,6 +5,8 @@ from .views import BlogCreateView
 from .views import BlogUpdateView
 from .views import BlogDeleteView
 
+app_name = 'blog'
+
 #urls for this app
 urlpatterns = [
     path('', BlogListView.as_view(), name='home'),

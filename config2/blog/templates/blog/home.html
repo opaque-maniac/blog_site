@@ -4,7 +4,7 @@
     <ul>
         {% for post in object_list %}
             <li>
-                <h2><a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a></h2>
+                <h2><a href="{% url 'blog:post_detail' post.pk %}">{{ post.title }}</a></h2>
             </li>
             <p>By : <i>{{ post.author }}</i></p>
             <p>{{ post.body }}</p>
