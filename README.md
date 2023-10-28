@@ -15,4 +15,8 @@ To run app:
 I will host the website soon, just have to have some kinks worked out first before any of this blows up in my face once I have it live.
 Have fun!
 
+28/10/2023
+I just updated the way links for the project are refered to on the templates and in the app itself.
+I added a app_name attribute to the url files for namespacing.
+
 opaque-maniac
