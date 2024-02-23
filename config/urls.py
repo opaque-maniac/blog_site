@@ -24,6 +24,7 @@ urlpatterns = [
     # New
     path('', include('core.urls')),
     path('users/', include('users.urls')),
+    path('blog/', include('blog.urls')),
 ]
 
 if settings.DEBUG:

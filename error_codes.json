@@ -1,0 +1,25 @@
+{
+    "author": "Opaque-maniac",
+    "errors": [
+        {
+            "code": "001",
+            "error-message": "Queryset is empty"
+        },
+        {
+            "code": "002",
+            "error-message": "Target not found"
+        },
+        {
+            "code": "003",
+            "error-message": "Server error"
+        },
+        {
+            "code": "004",
+            "error-message": "Invalid form submitted"
+        },
+        {
+            "code": "005",
+            "error-message":"Wrong request method"
+        }
+    ]
+}

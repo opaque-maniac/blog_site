@@ -1,0 +1,19 @@
+{ 
+    'success': True,
+    'message': 'Retrieved all posts',
+    'empty': False,
+    'posts': '[{
+        "model": "blog.post",
+        "pk": 1,
+        "fields": {
+            "title": "Test post",
+            "content": "Woo hoo, can you see me",
+            "cover_image": "",
+            "author": 1,
+            "likes": 0,
+            "dislikes": 0,
+            "date_posted": "2024-02-18T21:05:54.625Z",
+            "date_modified": "2024-02-18T21:05:54.626Z"
+        }
+    }]
+}

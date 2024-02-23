@@ -2,7 +2,13 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
-# Test the custom user model
+
+"""
+    Test the custom user model
+    Test create_user method
+    Test create_superuser method
+    Test strign representation
+"""
 class TestCustomUser(TestCase):
     def setUp(self) -> None:
         self.user_credentials = {
@@ -49,7 +55,13 @@ class TestCustomUser(TestCase):
         self.user.delete()
         self.superuser.delete()
 
-# Test the register page view
+
+"""
+    Test the register page
+    Test response code => 200
+    Test the template used => 'users/register.html'
+    Test post method
+"""
 class TestRegisterView(TestCase):
     def setUp(self) -> None:
         self.user_credentials = {
@@ -76,7 +88,13 @@ class TestRegisterView(TestCase):
         response = self.client.post(reverse('users:register'), self.user_credentials)
         self.assertEqual(response.status_code, 200)
     
-# Test the login page view
+
+"""
+    Test the login page
+    Test response code => 200
+    Test the template used => 'users/register.html'
+    Test post method
+"""
 class TestLoginView(TestCase):
     def setUp(self) -> None:
         self.user_credentials = {
@@ -108,7 +126,12 @@ class TestLoginView(TestCase):
     def tearDown(self) -> None:
         self.user.delete()
 
-# Test the profile view
+
+"""
+    Test the profile page
+    Test response code => 302/200
+    Test the template used => 'users/profile.html'
+"""
 class TestProfileView(TestCase):
     def setUp(self) -> None:
         self.user_credentials = {
@@ -130,6 +153,7 @@ class TestProfileView(TestCase):
 
     def test_redirect(self):
         response = self.client.get(reverse('users:profile'))
+        self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, '/users/login/?next=/users/profile/')
 
     def test_response_code_authenticated(self):
@@ -146,7 +170,12 @@ class TestProfileView(TestCase):
     def tearDown(self) -> None:
         self.user.delete()
 
-# Test the logout view
+
+"""
+    Test the logout view
+    Test response code => 302/200
+    Test the template used => None
+"""
 class TestLogoutView(TestCase):
     def setUp(self) -> None:
         self.user_credentials = {
@@ -168,6 +197,7 @@ class TestLogoutView(TestCase):
     
     def test_redirect(self):
         response = self.client.get(reverse('users:logout'))
+        self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, '/users/login/?next=/users/logout/')
     
     def test_response_code_authenticated(self):
@@ -178,12 +208,19 @@ class TestLogoutView(TestCase):
     def test_redirect_authenticated(self):
         self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
         response = self.client.get(reverse('users:logout'))
+        self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, '/')
 
     def tearDown(self) -> None:
         self.user.delete()
 
- # Test for the update profile view
+
+"""
+    Test the register page
+    Test response code => 302/200
+    Test the template used => 'users/update_profile.html'
+    Test post method
+"""
 class TestUpdateProfileView(TestCase):
     def setUp(self) -> None:
         self.user_credentials = {
@@ -217,7 +254,7 @@ class TestUpdateProfileView(TestCase):
         response = self.client.get(reverse('users:update_profile'))
         self.assertEqual(response.status_code, 200)
     
-    def test_redirect_template_used(self):
+    def test_template_used(self):
         self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
         response = self.client.get(reverse('users:update_profile'))
         self.assertTemplateUsed(response, 'users/update_profile.html')

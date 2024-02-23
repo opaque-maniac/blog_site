@@ -6,6 +6,7 @@ from .views import (
     logout_view,
     profile,
     update_profile,
+    user_profile,
 )
 
 app_name = 'users'
@@ -17,4 +18,5 @@ urlpatterns = [
     path('logout/', logout_view, name='logout'),
     path('profile/', profile, name='profile'),
     path('profile/update/', update_profile, name='update_profile'),
+    path('profile/<int:user_id>/', user_profile, name='user_profile'),
 ]
