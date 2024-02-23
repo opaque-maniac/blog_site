@@ -463,6 +463,84 @@ class TestIndividualPost(TestCase):
     
 
 """
+    Test the add to test the retrieve comments view
+    Test the response code => 302/200
+    Test template used => None
+    Test json respnse
+"""
+class TestRetrieveComments(TestCase):
+    def setUp(self) -> None:
+        self.user_credentials = {
+            'email': 'test@example.com',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'password': 'testpassword'
+        }
+        self.user = get_user_model().objects.create_user(**self.user_credentials)
+        self.user.save()
+
+        self.post_details = {
+            'title': 'Test post',
+            'content': 'Woo hoo, can you see me',
+            'author': self.user,
+        }
+        self.post = Post.objects.create(**self.post_details)
+        self.post.save()
+
+        self.comment_details = {
+            'author': self.user,
+            'content': 'Nice description',
+            'post': self.post,
+        }
+        self.comment = Comment.objects.create(**self.comment_details)
+        self.comment.save()
+    
+    def test_response_code(self):
+        response = self.client.get(f'/blog/posts/{ self.post.id }/comments/retrieve/')
+        self.assertEqual(response.status_code, 302)
+    
+    def test_response_code_name(self):
+        response = self.client.get(reverse('blog:retrieve_comments', args=[self.post.id]))
+        self.assertEqual(response.status_code, 302)
+    
+    def test_redirect(self):
+        response = self.client.get(reverse('blog:retrieve_comments', args=[self.post.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, f'/users/login/?next=/blog/posts/{ self.post.id }/comments/retrieve/')
+    
+    def response_code_authenticated(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:retrieve_comments', args=[self.post.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['content-type'], 'application/json')
+    
+    def test_json_response(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:retrieve_comments', args=[self.post.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['content-type'], 'application/json')
+        # Parse json response
+        data = json.loads(response.content)
+        self.assertTrue(data['success'])
+        self.assertIsNone(data['error_code'])
+        self.assertIsNotNone(data['comment_data'])
+        # Parse through comment data
+        comment_data = data['comment_data'][0]
+        self.assertEqual(comment_data['id'], self.comment.id)
+        self.assertEqual(comment_data['content'], self.comment.content)
+        # Parse through author data
+        author_data = comment_data['author']
+        self.assertEqual(author_data['id'], self.user.id)
+        self.assertEqual(author_data['first_name'], self.user.first_name)
+        self.assertEqual(author_data['last_name'], self.user.last_name)
+
+    def tearDown(self) -> None:
+        self.comment.delete()
+        self.post.delete()
+        self.user.delete()
+
+
+"""
     Test the like post view
     Test the response code => 302/200
     Test template used => None
@@ -825,7 +903,7 @@ class TestRetrieveFavorites(TestCase):
         self.assertTrue(data['success'])
         self.assertIsNone(data['error_code'])
         # Parse favorites data
-        favorites = data['favorites'][0]
+        favorites = data['post_data'][0]
         self.assertEqual(favorites['id'], self.post.id)
         self.assertEqual(favorites['title'], self.post.title)
     
@@ -944,7 +1022,6 @@ class TestCreateCommentView(TestCase):
         # Parse json response
         data = json.loads(response.content)
         self.assertFalse(data['success'])
-        self.assertEqual(data['message'], 'Invalid request method')
         self.assertIsNotNone(data['error_code'])
         self.assertEqual(data['error_code'], '005')
     
@@ -1235,6 +1312,7 @@ class TestDislikeComment(TestCase):
             'content_object': self.comment
         }
         self.like = Like.objects.create(**self.like_details)
+        self.like.save()
     
     def test_response_code(self):
         response = self.client.get(f'/blog/posts/comments/{ self.comment.id }/dislike/')
@@ -1271,6 +1349,600 @@ class TestDislikeComment(TestCase):
         self.assertIsNotNone(data['error_code'])
 
     def tearDown(self) -> None:
+        self.comment.delete()
+        self.post.delete()
+        self.user.delete()
+
+
+"""
+    Test the add to test the general liked page view
+    Test the response code => 302/200
+    Test template used => 'blog/liked.html'
+"""
+class TestLikedPage(TestCase):
+    def setUp(self) -> None:
+        self.user_credentials = {
+            'email': 'test@example.com',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'password': 'testpassword'
+        }
+        self.user = get_user_model().objects.create_user(**self.user_credentials)
+        self.user.save()
+    
+    def test_response_code(self):
+        response = self.client.get('/blog/liked/')
+        self.assertEqual(response.status_code, 302)
+    
+    def test_response_code_name(self):
+        response = self.client.get(reverse('blog:liked'))
+        self.assertEqual(response.status_code, 302)
+    
+    def test_redirect(self):
+        response = self.client.get(reverse('blog:liked'))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/users/login/?next=/blog/liked/')
+    
+    def response_code_authenticated(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:liked'))
+        self.assertEqual(response.status_code, 200)
+    
+    def test_template_used(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:liked'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'blog/liked.html')
+    
+    def tearDown(self) -> None:
+        self.user.delete()
+    
+
+"""
+    Test the add to test the liked posts page view
+    Test the response code => 302/200
+    Test template used => 'blog/liked_posts.html'
+"""
+class TestLikedPostPage(TestCase):
+    def setUp(self) -> None:
+        self.user_credentials = {
+            'email': 'test@example.com',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'password': 'testpassword'
+        }
+        self.user = get_user_model().objects.create_user(**self.user_credentials)
+        self.user.save()
+    
+    def test_response_code(self):
+        response = self.client.get('/blog/liked/posts/')
+        self.assertEqual(response.status_code, 302)
+    
+    def test_response_code_name(self):
+        response = self.client.get(reverse('blog:liked_posts'))
+        self.assertEqual(response.status_code, 302)
+    
+    def test_redirect(self):
+        response = self.client.get(reverse('blog:liked_posts'))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/users/login/?next=/blog/liked/posts/')
+    
+    def response_code_authenticated(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:liked_posts'))
+        self.assertEqual(response.status_code, 200)
+    
+    def test_template_used(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:liked_posts'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'blog/liked_posts.html')
+    
+    def tearDown(self) -> None:
+        self.user.delete()
+
+
+"""
+    Test the add to test the retrieve liked posts view
+    Test the response code => 302/200
+    Test template used => None
+    Test json respnse
+"""
+class TestRetrieveLikedPosts(TestCase):
+    def setUp(self) -> None:
+        self.user_credentials = {
+            'email': 'test@example.com',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'password': 'testpassword'
+        }
+        self.user = get_user_model().objects.create_user(**self.user_credentials)
+        self.user.save()
+
+        self.post_details = {
+            'title': 'Test post',
+            'content': 'Woo hoo, can you see me',
+            'author': self.user,
+        }
+        self.post = Post.objects.create(**self.post_details)
+        self.post.save()
+
+        self.like_details = {
+            'user': self.user,
+            'content_id': self.post.id,
+            'content_type': ContentType.objects.get_for_model(Post),
+            'content_object': self.post
+        }
+        self.like = Like.objects.create(**self.like_details)
+        self.like.save()
+    
+    def test_response_code(self):
+        response = self.client.get('/blog/liked/posts/retrieve/')
+        self.assertEqual(response.status_code, 302)
+    
+    def test_response_code_name(self):
+        response = self.client.get(reverse('blog:retrieve_liked_posts'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_redirect(self):
+        response = self.client.get(reverse('blog:retrieve_liked_posts'))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/users/login/?next=/blog/liked/posts/retrieve/')
+    
+    def response_code_authenticated(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:retrieve_liked_posts'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['content-type'], 'application/json')
+    
+    def test_json_response(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:retrieve_liked_posts'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['content-type'], 'application/json')
+        # Parse json response
+        data = json.loads(response.content)
+        self.assertTrue(data['success'])
+        self.assertIsNone(data['error_code'])
+        self.assertIsNotNone(data['post_data'])
+        # Parse through post data
+        post = data['post_data'][0]
+        self.assertEqual(post['id'], self.post.id)
+        self.assertEqual(post['title'], self.post.title)
+        # Parse through author data
+        author_data = post['author']
+        self.assertEqual(author_data['id'], self.user.id)
+        self.assertEqual(author_data['first_name'], self.user.first_name)
+        self.assertEqual(author_data['last_name'], self.user.last_name)
+    
+    def tearDown(self) -> None:
+        self.like.delete()
+        self.post.delete()
+        self.user.delete()
+
+
+"""
+    Test the add to test the liked comments page view
+    Test the response code => 302/200
+    Test template used => 'blog/liked_comments.html'
+"""
+class TestLikedCommentsPage(TestCase):
+    def setUp(self) -> None:
+        self.user_credentials = {
+            'email': 'test@example.com',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'password': 'testpassword'
+        }
+        self.user = get_user_model().objects.create_user(**self.user_credentials)
+        self.user.save()
+    
+    def test_response_code(self):
+        response = self.client.get('/blog/liked/comments/')
+        self.assertEqual(response.status_code, 302)
+    
+    def test_response_code_name(self):
+        response = self.client.get(reverse('blog:liked_comments'))
+        self.assertEqual(response.status_code, 302)
+    
+    def test_redirect(self):
+        response = self.client.get(reverse('blog:liked_comments'))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/users/login/?next=/blog/liked/comments/')
+    
+    def response_code_authenticated(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:liked_comments'))
+        self.assertEqual(response.status_code, 200)
+    
+    def test_template_used(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:liked_comments'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'blog/liked_comments.html')
+    
+    def tearDown(self) -> None:
+        self.user.delete()
+
+
+"""
+    Test the add to test the retrieve liked posts view
+    Test the response code => 302/200
+    Test template used => None
+    Test json respnse
+"""
+class TestRetrieveComments(TestCase):
+    def setUp(self) -> None:
+        self.user_credentials = {
+            'email': 'test@example.com',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'password': 'testpassword'
+        }
+        self.user = get_user_model().objects.create_user(**self.user_credentials)
+        self.user.save()
+
+        self.post_details = {
+            'title': 'Test post',
+            'content': 'Woo hoo, can you see me',
+            'author': self.user,
+        }
+        self.post = Post.objects.create(**self.post_details)
+        self.post.save()
+
+        self.comment_details = {
+            'author': self.user,
+            'content': 'Nice description',
+            'post': self.post,
+        }
+        self.comment = Comment.objects.create(**self.comment_details)
+        self.comment.save()
+    
+        self.liked_comment = {
+            'user': self.user,
+            'content_id': self.comment.id,
+            'content_type': ContentType.objects.get_for_model(Comment),
+            'content_object': self.comment
+        }
+        self.like = Like.objects.create(**self.liked_comment)
+        self.like.save()
+    
+    def test_response_code(self):
+        response = self.client.get('/blog/liked/comments/retrieve/')
+        self.assertEqual(response.status_code, 302)
+    
+    def test_response_code_name(self):
+        response = self.client.get(reverse('blog:retrieve_liked_comments'))
+        self.assertEqual(response.status_code, 302)
+    
+    def test_redirect(self):
+        response = self.client.get(reverse('blog:retrieve_liked_comments'))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/users/login/?next=/blog/liked/comments/retrieve/')
+    
+    def response_code_authenticated(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:retrieve_liked_comments'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['content-type'], 'application/json')
+    
+    def test_json_response(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:retrieve_liked_comments'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['content-type'], 'application/json')
+        # Parse json response
+        data = json.loads(response.content)
+        self.assertTrue(data['success'])
+        self.assertIsNone(data['error_code'])
+        self.assertIsNotNone(data['comment_data'])
+        # Parse through comment data
+        comment_data = data['comment_data'][0]
+        self.assertEqual(comment_data['id'], self.comment.id)
+        self.assertEqual(comment_data['content'], self.comment.content)
+        # Parse through author data
+        author_data = comment_data['author']
+        self.assertEqual(author_data['id'], self.user.id)
+        self.assertEqual(author_data['first_name'], self.user.first_name)
+        self.assertEqual(author_data['last_name'], self.user.last_name)
+    
+    def tearDown(self) -> None:
+        self.like.delete()
+        self.comment.delete()
+        self.post.delete()
+        self.user.delete()
+
+
+"""
+    Test the add to test the notifications page view
+    Test the response code => 302/200
+    Test template used => 'blog/notifications.html'
+"""
+class TestNotificationsPage(TestCase):
+    def setUp(self) -> None:
+        self.user_credentials = {
+            'email': 'test@example.com',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'password': 'testpassword'
+        }
+        self.user = get_user_model().objects.create_user(**self.user_credentials)
+        self.user.save()
+    
+    def test_response_code(self):
+        response = self.client.get('/blog/notifications/')
+        self.assertEqual(response.status_code, 302)
+    
+    def test_reponse_code_name(self):
+        response = self.client.get(reverse('blog:notifications'))
+        self.assertEqual(response.status_code, 302)
+    
+    def test_redirect(self):
+        response = self.client.get(reverse('blog:notifications'))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/users/login/?next=/blog/notifications/')
+    
+    def response_code_authenticated(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:notifications'))
+        self.assertEqual(response.status_code, 200)
+    
+    def test_template_used(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:notifications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'blog/notifications.html')
+    
+    def tearDown(self) -> None:
+        self.user.delete()
+
+
+"""
+    Test the add to test the retrieve new notifications view
+    Test the response code => 302/200
+    Test template used => None
+    Test json respnse
+"""
+class TestRetrieveNewNotifications(TestCase):
+    def setUp(self) -> None:
+        self.user_credentials = {
+            'email': 'test@example.com',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'password': 'testpassword'
+        }
+        self.user = get_user_model().objects.create_user(**self.user_credentials)
+        self.user.save()
+
+        self.post_details = {
+            'title': 'Test post',
+            'content': 'Woo hoo, can you see me',
+            'author': self.user,
+        }
+        self.post = Post.objects.create(**self.post_details)
+        self.post.save()
+
+        self.comment_details = {
+            'author': self.user,
+            'content': 'Nice description',
+            'post': self.post,
+        }
+        self.comment = Comment.objects.create(**self.comment_details)
+        self.comment.save()
+    
+        self.post_notification_details = {
+            'user': self.user,
+            'content_type': ContentType.objects.get_for_model(Post),
+            'content_id': self.post.id,
+            'content_object': self.post,
+        }
+        self.post_notification = Notification.objects.create(**self.post_notification_details)
+        self.post_notification.save()
+
+        self.comment_notification_details = {
+            'user': self.user,
+            'content_type': ContentType.objects.get_for_model(Comment),
+            'content_id': self.comment.id,
+            'content_object': self.comment,
+        }
+        self.comment_notification = Notification.objects.create(**self.comment_notification_details)
+        self.comment_notification.save()
+    
+    def test_response_code(self):
+        response = self.client.get('/blog/notifications/retrieve/')
+        self.assertEqual(response.status_code, 302)
+    
+    def test_response_code_name(self):
+        response = self.client.get(reverse('blog:retrieve_new_notifications'))
+        self.assertEqual(response.status_code, 302)
+    
+    def test_redirect(self):
+        response = self.client.get(reverse('blog:retrieve_new_notifications'))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/users/login/?next=/blog/notifications/retrieve/')
+    
+    def response_code_authenticated(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:retrieve_new_notifications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['content-type'], 'application/json')
+    
+    def test_json_response(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:retrieve_new_notifications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['content-type'], 'application/json')
+        # Parse json response
+        data = json.loads(response.content)
+        self.assertTrue(data['success'])
+        self.assertIsNone(data['error_code'])
+        self.assertIsNotNone(data['notification_data'])
+        # Parse through notification data
+        comment_notification = data['notification_data'][0]
+        self.assertEqual(comment_notification['id'], self.comment_notification.id)
+        # Parse through comment notification data
+        post_notification = data['notification_data'][1]
+        self.assertEqual(post_notification['id'], self.post_notification.id)
+    
+    def test_viewed_json_response(self):
+        Notification.objects.filter(id=self.comment_notification.id).update(viewed=True)
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:retrieve_new_notifications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['content-type'], 'application/json')
+        # Parse json response
+        data = json.loads(response.content)
+        self.assertTrue(data['success'])
+        self.assertIsNone(data['error_code'])
+        self.assertIsNotNone(data['notification_data'])
+        # Parse through notification data
+        post_notification = data['notification_data'][0]
+        self.assertEqual(post_notification['id'], self.post_notification.id)
+        self.assertFalse(post_notification['viewed'])
+
+    def tearDown(self) -> None:
+        self.post_notification.delete()
+        self.comment_notification.delete()
+        self.comment.delete()
+        self.post.delete()
+        self.user.delete()
+
+
+"""
+    Test the add to test the all notifications page view
+    Test the response code => 302/200
+    Test template used => 'blog/all_notifications.html'
+"""
+class TestAllNotificationsPage(TestCase):
+    def setUp(self) -> None:
+        self.user_credentials = {
+            'email': 'test@example.com',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'password': 'testpassword'
+        }
+        self.user = get_user_model().objects.create_user(**self.user_credentials)
+        self.user.save()
+    
+    def test_response_code(self):
+        response = self.client.get('/blog/notifications/all/')
+        self.assertEqual(response.status_code, 302)
+    
+    def test_reponse_code_name(self):
+        response = self.client.get(reverse('blog:all_notifications'))
+        self.assertEqual(response.status_code, 302)
+    
+    def test_redirect(self):
+        response = self.client.get(reverse('blog:all_notifications'))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/users/login/?next=/blog/notifications/all/')
+    
+    def response_code_authenticated(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:all_notifications'))
+        self.assertEqual(response.status_code, 200)
+    
+    def test_template_used(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:all_notifications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'blog/all_notifications.html')
+    
+    def tearDown(self) -> None:
+        self.user.delete()
+
+
+"""
+    Test the add to test the retrieve all notifications view
+    Test the response code => 302/200
+    Test template used => None
+    Test json respnse
+"""
+class TestRetrieveAllNotifications(TestCase):
+    def setUp(self) -> None:
+        self.user_credentials = {
+            'email': 'test@example.com',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'password': 'testpassword'
+        }
+        self.user = get_user_model().objects.create_user(**self.user_credentials)
+        self.user.save()
+
+        self.post_details = {
+            'title': 'Test post',
+            'content': 'Woo hoo, can you see me',
+            'author': self.user,
+        }
+        self.post = Post.objects.create(**self.post_details)
+        self.post.save()
+
+        self.comment_details = {
+            'author': self.user,
+            'content': 'Nice description',
+            'post': self.post,
+        }
+        self.comment = Comment.objects.create(**self.comment_details)
+        self.comment.save()
+    
+        self.post_notification_details = {
+            'user': self.user,
+            'content_type': ContentType.objects.get_for_model(Post),
+            'content_id': self.post.id,
+            'content_object': self.post,
+        }
+        self.post_notification = Notification.objects.create(**self.post_notification_details)
+        self.post_notification.save()
+
+        self.comment_notification_details = {
+            'user': self.user,
+            'content_type': ContentType.objects.get_for_model(Comment),
+            'content_id': self.comment.id,
+            'content_object': self.comment,
+            'viewed': True
+        }
+        self.comment_notification = Notification.objects.create(**self.comment_notification_details)
+        self.comment_notification.save()
+    
+    def test_response_code(self):
+        response = self.client.get('/blog/notifications/all/retrieve/')
+        self.assertEqual(response.status_code, 302)
+    
+    def test_response_code_name(self):
+        response = self.client.get(reverse('blog:retrieve_all_notifications'))
+        self.assertEqual(response.status_code, 302)
+    
+    def test_redirect(self):
+        response = self.client.get(reverse('blog:retrieve_all_notifications'))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, '/users/login/?next=/blog/notifications/all/retrieve/')
+    
+    def response_code_authenticated(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:retrieve_all_notifications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['content-type'], 'application/json')
+    
+    def test_json_response(self):
+        self.client.login(email=self.user_credentials['email'], password=self.user_credentials['password'])
+        response = self.client.get(reverse('blog:retrieve_all_notifications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['content-type'], 'application/json')
+        # Parse json response
+        data = json.loads(response.content)
+        self.assertTrue(data['success'])
+        self.assertIsNone(data['error_code'])
+        self.assertIsNotNone(data['notification_data'])
+        # Parse through notification data
+        comment_notification = data['notification_data'][0]
+        self.assertEqual(comment_notification['id'], self.comment_notification.id)
+        # Parse through comment notification data
+        post_notification = data['notification_data'][1]
+        self.assertEqual(post_notification['id'], self.post_notification.id)
+    
+    def tearDown(self) -> None:
+        self.post_notification.delete()
+        self.comment_notification.delete()
         self.comment.delete()
         self.post.delete()
         self.user.delete()

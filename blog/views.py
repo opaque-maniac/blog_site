@@ -7,6 +7,7 @@ from django.db.models import F
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import EmptyResultSet, ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth import get_user_model
 
 from .models import (
     Post,
@@ -56,7 +57,7 @@ def get_next_posts(request):
                         'id': post.author.id,
                         'first_name': post.author.first_name,
                         'last_name': post.author.last_name,
-                        'url': reverse('blog:user_profile', args=[post.author.id])
+                        'url': reverse('users:user_profile', args=[post.author.id])
                     },
                     'liked': True if Like.objects.filter(content_id=post.id, user=request.user).exists() else False,
                 } for post in next_posts
@@ -91,6 +92,61 @@ def individual_post(request, post_id):
         'post': post,
         'form': form,
     })
+
+
+"""
+    This is a view function to retrieve comments dynamically
+    It uses no form
+    It returns a json response
+"""
+@login_required
+def retrieve_comments(request, post_id):
+    try:
+        post = get_object_or_404(Post, id=post_id)
+        last_comment_id = request.GET.get('last_comment_id')
+
+        if last_comment_id:
+            comments = Comment.objects.filter(post=post, id__lt=last_comment_id).order_by('-id')[:5]
+        else:
+            comments = Comment.objects.filter(post=post).order_by('-id')[:20]
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Retrieved comments',
+            'error_code': None,
+            'comment_data': [
+                {
+                    'id': comment.id,
+                    'content': comment.content,
+                    'author': {
+                        'id': comment.author.id,
+                        'first_name': comment.author.first_name,
+                        'last_name': comment.author.last_name,
+                        'url': reverse('users:user_profile', args=[comment.author.id])
+                    },
+                    'liked': True if Like.objects.filter(content_id=comment.id, user=request.user).exists() else False,
+                } for comment in comments
+            ]
+        })
+    except EmptyResultSet:
+        return JsonResponse({
+            'success': False,
+            'message': 'No comment found',
+            'error_code': '001'
+        })
+    except ObjectDoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Post does not exist',
+            'error_code': '002'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Error occured when retrieving comments',
+            'error_code': '002',
+            'error_message': f'{ e }'
+        })
 
 
 """
@@ -248,32 +304,37 @@ def favotires(request):
 @login_required
 def retrieve_favorite(request):
     try:
+        user = get_user_model().objects.get(id=request.user.id)
         last_post_id = request.GET.get('last_post_id')
         if last_post_id:
-            favorites = Favorite.objects.filter(user=request.user, post__id__lt=last_post_id).order_by('-id')[:5]
+            favorites = Favorite.objects.filter(
+                user=user,
+                post_id__lt=last_post_id
+            ).order_by('-post_id')[:5]
         else:
-            favorites = Favorite.objects.filter(user=request.user)[:20]
+            favorites = Favorite.objects.filter(user=user).order_by('-post_id')[:20]
         return JsonResponse({
             'success': True,
-            'message': 'Favorites retrieved',
+            'message': 'Retrieved favorites',
             'error_code': None,
-            'favorites': [
+            'favorite_count': Favorite.objects.filter(user=user).count(),
+            'post_data': [
                 {
                     'id': favorite.post.id,
                     'title': favorite.post.title,
+                    'liked': True if Like.objects.filter(content_id=favorite.post.id, user=request.user).exists() else False,
                     'url': reverse('blog:individual_post', args=[favorite.post.id]),
                     'author': {
                         'id': favorite.post.author.id,
                         'first_name': favorite.post.author.first_name,
                         'last_name': favorite.post.author.last_name,
-                        'url': reverse('blog:user_profile', args=[favorite.post.author.id])
-                    },
-                    'liked': True if Like.objects.filter(content_id=favorite.post.id, user=request.user).exists() else False,
+                        'url': reverse('users:user_profile', args=[favorite.post.author.id])
+                    }
                 }
                 for favorite in favorites
             ]
         })
-    except Favorite.DoesNotExist:
+    except EmptyResultSet:
         return JsonResponse({
             'success': False,
             'message': 'No favorite found',
@@ -379,25 +440,16 @@ def create_comment(request, post_id):
                 comment.post = post
                 comment.save()
                 Notification.objects.create(
-                    user=post.author,
-                    content_id=post_id,
-                    content_type=ContentType.objects.get_for_model(Post),
-                    content_object=post,
+                    user=comment.post.author,
+                    content_id=comment.id,
+                    content_object=comment,
+                    content_type=ContentType.objects.get_for_model(Comment),
                     notification_content=f'{ request.user.first_name } { request.user.last_name } commented on your post'
                 )
                 return JsonResponse({
                     'success': True,
                     'message': 'Comment added',
-                    'error_code': None,
-                    'comment': {
-                        'id': comment.id,
-                        'author': {
-                            'id': comment.author.id,
-                            'first_name': comment.author.first_name,
-                            'last_name': comment.author.last_name
-                        },
-                        'content': comment.content,
-                    }
+                    'error_code': None
                 })
             else:
                 return JsonResponse({
@@ -411,7 +463,7 @@ def create_comment(request, post_id):
                 'message': 'Invalid request method',
                 'error_code': '005'
             })
-    except Post.DoesNotExist:
+    except ObjectDoesNotExist:
         return JsonResponse({
             'success': False,
             'message': 'Post does not exist',
@@ -446,6 +498,13 @@ def edit_comment(request, comment_id):
             form = CommentForm(data=request.POST)
             if form.is_valid():
                 Comment.objects.filter(id=comment_id).update(content=form.cleaned_data['content'])
+                Notification.objects.create(
+                    user=comment.post.author,
+                    content_id=comment.id,
+                    content_object=comment,
+                    content_type=ContentType.objects.get_for_model(Comment),
+                    notification_content=f'{ request.user.first_name } { request.user.last_name } edited their commented on your post'
+                )
                 return JsonResponse({
                     'success': True,
                     'message': 'Comment edited',
@@ -648,29 +707,31 @@ def retrieve_liked_posts(request):
                 user=request.user,
                 content_type=content_type,
                 content_id__lt=last_post_id
-            ).order_by('-content_id')[:5]
+            ).order_by('-id')[:5]
         else:
             liked = Like.objects.filter(
                 user=request.user,
                 content_type=content_type
-            ).order_by('-content-id')[:20]
+            ).order_by('-id')[:20]
+        liked_posts = [like.content_object for like in liked]
         return JsonResponse({
             'success': True,
-            'message': 'Retrieved liked posts',
+            'message': 'Retrieved liked comments',
             'error_code': None,
             'post_data': [
                 {
-                    'id': like.content_object.id,
-                    'title': like.content_object.title,
-                    'url': reverse('blog:individual_post', args=[like.content_id]),
+                    'id': post.id,
+                    'title': post.title,
+                    'liked': True if Like.objects.filter(content_id=post.id, user=request.user).exists() else False,
+                    'url': reverse('blog:individual_post', args=[post.id]),
                     'author': {
-                        'id': like.content_object.author.id,
-                        'first_name': like.content_object.author.first_name,
-                        'last_name': like.content_object.author.last_name,
-                        'url': reverse('blog:user_profile', args=[like.content_object.author.id])
+                        'id': post.author.id,
+                        'first_name': post.author.first_name,
+                        'last_name': post.author.last_name,
+                        'url': reverse('users:user_profile', args=[post.author.id])
                     }
                 }
-                for like in liked
+                for post in liked_posts
             ]
         })
     except EmptyResultSet:
@@ -682,9 +743,9 @@ def retrieve_liked_posts(request):
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': 'Error occured when retrieving posts',
+            'message': 'Error occurred when retrieving liked posts',
             'error_code': '003',
-            'error_message': f'{ e }'
+            'error_message': str(e)
         })
 
 
@@ -711,34 +772,36 @@ def liked_comments(request):
 def retrieve_liked_comments(request):
     try:
         content_type = ContentType.objects.get_for_model(Comment)
-        last_post_id = request.GET.get('last_post_id')
-        if last_post_id:
+        last_comment_id = request.GET.get('last_comment_id')
+        if last_comment_id:
             liked = Like.objects.filter(
                 user=request.user,
                 content_type=content_type,
-                content_id__lt=last_post_id
-            ).order_by('-content_id')[:5]
+                content_id__lt=last_comment_id
+            ).order_by('-id')[:5]
         else:
             liked = Like.objects.filter(
                 user=request.user,
                 content_type=content_type
-            ).order_by('-content-id')[:20]
+            ).order_by('-id')[:20]
+        liked_comments = [like.content_object for like in liked]
         return JsonResponse({
             'success': True,
             'message': 'Retrieved liked comments',
             'error_code': None,
-            'post_data': [
+            'comment_data': [
                 {
-                    'id': like.content_object.id,
-                    'title': like.content_object.title,
+                    'id': comment.id,
+                    'content': comment.content,
+                    'liked': True if Like.objects.filter(content_id=comment.id, user=request.user).exists() else False,
                     'author': {
-                        'id': like.content_object.author.id,
-                        'first_name': like.content_object.author.first_name,
-                        'last_name': like.content_object.author.last_name,
-                        'url': reverse('blog:user_profile', args=[like.content_object.author.id])
+                        'id': comment.author.id,
+                        'first_name': comment.author.first_name,
+                        'last_name': comment.author.last_name,
+                        'url': reverse('users:user_profile', args=[comment.author.id])
                     }
                 }
-                for like in liked
+                for comment in liked_comments
             ]
         })
     except EmptyResultSet:
@@ -750,7 +813,163 @@ def retrieve_liked_comments(request):
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': 'Error occured when retrieving posts',
+            'message': 'Error occurred when retrieving liked comments',
             'error_code': '003',
-            'error_message': f'{ e }'
+            'error_message': str(e)
+        })
+
+
+"""
+    This is a view function for the notifications post page
+    It uses Post Form
+    It renders => 'blog/notifications.html'
+"""
+@login_required
+def notifications(request):
+    count = Notification.objects.filter(user=request.user, viewed=False).count()
+    return render(request, 'blog/notifications.html', {
+        'count': count
+    })
+
+
+"""
+    This is a view function for retrieving notifications
+    It uses no forms
+    It returns a json response
+"""
+@login_required
+def retrieve_new_notifications(request):
+    try:
+        last_notification_id = request.GET.get('last_notification_id')
+        if last_notification_id:
+            notifications = Notification.objects.filter(
+                user=request.user,
+                id__lt=last_notification_id,
+                viewed=False
+            ).order_by('-id')[:5]
+        else:
+            notifications = Notification.objects.filter(
+                user=request.user,
+                viewed=False
+            ).order_by('-id')[:20]
+        blog_type = ContentType.objects.get_for_model(Post)
+        return JsonResponse({
+            'success': True,
+            'message': 'Retrieved notifications',
+            'error_code': None,
+            'notification_data': [
+                {
+                    'id': notification.id,
+                    'content': notification.notification_content,
+                    'url': reverse('blog:individual_post', args=[notification.content_id]) if notification.content_type == blog_type else f"{ reverse('blog:individual_post', args=[notification.content_object.post.id]) }#comment-{ notification.content_id }",
+                    'viewed': notification.viewed
+                }
+                for notification in notifications
+            ]
+        })
+    except EmptyResultSet:
+        return JsonResponse({
+            'success': False,
+            'message': 'No notifications',
+            'error_code': '001'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Error occurred when retrieving notifications',
+            'error_code': '003',
+            'error_message': str(e)
+        })
+
+
+"""
+    This is a view function for retrieving notifications
+    It uses no forms
+    It returns a json response
+"""
+@login_required
+def view_notification(request, notification_id):
+    try:
+        notification = get_object_or_404(Notification, id=notification_id)
+        if notification.user != request.user:
+            return JsonResponse({
+                'success': False,
+                'message': 'Permission denied',
+                'error_code': '006'
+            })
+        Notification.objects.filter(id=notification_id).update(viewed=True)
+        return JsonResponse({
+            'success': True,
+            'message': 'Notification opened',
+            'error_code': None
+        })
+    except ObjectDoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'No notifications',
+            'error_code': '001'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Error occurred when viewing notifications',
+            'error_code': '003',
+            'error_message': str(e)
+        })
+
+
+"""
+    This is a view function for the all notifications post page
+    It uses Post Form
+    It renders => 'blog/all_notifications.html'
+"""
+@login_required
+def all_notifications(request):
+    count = Notification.objects.filter(user=request.user).count()
+    return render(request, 'blog/all_notifications.html', {
+        'count': count
+    })
+
+
+"""
+    This is a view function for retrieving all notifications
+    It uses no forms
+    It returns a json response
+"""
+@login_required
+def retrieve_all_notifications(request):
+    try:
+        last_notification_id = request.GET.get('last_notification_id')
+        if last_notification_id:
+            notifications = Notification.objects.filter(user=request.user, id__lt=last_notification_id).order_by('-id')[:5]
+        else:
+            notifications = Notification.objects.filter(user=request.user).order_by('-id')[:20]
+        
+        blog_type = ContentType.objects.get_for_model(Post)
+        return JsonResponse({
+            'success': True,
+            'message': 'Retrieved notifications',
+            'error_code': None,
+            'notification_data': [
+                {
+                    'id': notification.id,
+                    'content': notification.notification_content,
+                    'url': reverse('blog:individual_post', args=[notification.content_id]) if notification.content_type == blog_type else f"{ reverse('blog:individual_post', args=[notification.content_object.post.id]) }#comment-{ notification.content_id }",
+                    'viewed': notification.viewed
+                }
+                for notification in notifications
+            ]
+        })
+    except EmptyResultSet:
+        return JsonResponse({
+            'success': False,
+            'message': 'No notifications',
+            'error_code': '001'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Error occurred when retrieving notifications',
+            'error_code': '003',
+            'error_message': str(e)
         })
