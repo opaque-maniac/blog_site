@@ -15,7 +15,7 @@
                     {{ field }}
                     {% if field.help_text %}
                         <a href="javascript:void(0)" class="alt-link">Help text</a>
-                        <small style="display:none;" class="form-text text-muted">{{ field.help_text }}</small>
+                        <small class="form-text text-muted">{{ field.help_text }}</small>
                     {% endif %}
                     {% for error in field.errors %}
                         <small class="form-text text-danger">{{ error }}</small>
