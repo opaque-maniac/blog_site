@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% load static %}
+{% block meta %}{% endblock meta %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'users/css/register.css' %}"> 
+{% endblock css %}
+{% block title %}Register{% endblock title %}
+{% block content %}
+    <div class="page-container">
+        <h2 class="page-title">Register</h2>
+        <form method="post" action="{% url 'users:register' %}" class="form">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}
+                        <a href="javascript:void(0)" class="alt-link">Help text</a>
+                        <small style="display:none;" class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <small class="form-text text-danger">{{ error }}</small>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="form-button submit-button">Register</button>
+        </form>
+    </div>
+{% endblock content %}
+{% block js %}
+    <script type="text/javascript" src="{% static 'users/js/register.js' %}"></script>
+{% endblock js %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% load static %}
+{% block meta %}{% endblock meta %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'users/css/login.css' %}">
+{% endblock css %}
+{% block title %}Login{% endblock title %}
+{% block content %}
+    <div class="page-container">
+        <h2 class="page-title">Login</h2>
+        <form method="post" action="{% url 'users:login' %}" class="form">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <small class="form-text text-danger">{{ error }}</small>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="form-button submit-button">Login</button>
+        </form>
+    </div>
+{% endblock content %}
+{% block js %}
+    <script type="text/javascript" src="{% static 'users/js/login.js' %}"></script>
+{% endblock js %}

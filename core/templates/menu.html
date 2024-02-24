@@ -1,0 +1,21 @@
+{% if user.is_authenticated %}
+<div class="menu">
+    <ul class="menu__list">
+        <li class="menu__list--item">
+            <a href="{% url 'core:terms' %}" class="menu__list--link">Terms & Conditons</a>
+        </li>
+        <li class="menu__list--item">
+            <a href="{% url 'blog:favorites' %}" class="menu__list--link">Favorites</a>
+        </li>
+        <li class="menu__list--item">
+            <a href="{% url 'blog:liked' %}" class="menu__list--link">Liked items</a>
+        </li>
+        <li class="menu__list--item">
+            <a href="{% url 'users:profile' %}" class="menu__list--link">Profile</a>
+        </li>
+        <li class="menu__list--item">
+            <a href="{% url 'users:logout' %}" class="menu__list--link">Logout</a>
+        </li>
+    </ul>
+</div>
+{% endif %}

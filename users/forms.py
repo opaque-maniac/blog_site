@@ -24,11 +24,31 @@ class RegisterForm(UserCreationForm):
             }
         }
         widgets = {
-            'email': forms.EmailInput(attrs={'autofocus': True}),
-            'first_name': forms.TextInput(attrs={'autofocus': False}),
-            'last_name': forms.TextInput(attrs={'autofocus': False}),
-            'password1': forms.PasswordInput(attrs={'autofocus': False}),
-            'password2': forms.PasswordInput(attrs={'autofocus': False})
+            'email': forms.EmailInput(attrs={
+                'autofocus': True,
+                'placeholder': 'Email address',
+                'class': 'form-control form-email',
+            }),
+            'first_name': forms.TextInput(attrs={
+                'autofocus': False,
+                'placeholder': 'First name',
+                'class': 'form-control form-first-name',
+            }),
+            'last_name': forms.TextInput(attrs={
+                'autofocus': False,
+                'placeholder': 'Last name',
+                'class': 'form-control form-last-name',
+            }),
+            'password1': forms.PasswordInput(attrs={
+                'autofocus': False,
+                'placeholder': 'Password',
+                'class': 'form-control form-password1',
+            }),
+            'password2': forms.PasswordInput(attrs={
+                'autofocus': False,
+                'placeholder': 'Password',
+                'class': 'form-control form-password1',
+            })
         }
 
 # Form for logging in a user

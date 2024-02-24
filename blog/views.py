@@ -52,6 +52,8 @@ def get_next_posts(request):
                 {
                     'id': post.id,
                     'title': post.title,
+                    'liked': post.likes,
+                    'views': post.views,
                     'url': reverse('blog:individual_post', args=[post.id]),
                     'author': {
                         'id': post.author.id,
@@ -118,6 +120,7 @@ def retrieve_comments(request, post_id):
                 {
                     'id': comment.id,
                     'content': comment.content,
+                    'liked': comment.likes,
                     'author': {
                         'id': comment.author.id,
                         'first_name': comment.author.first_name,
@@ -723,6 +726,8 @@ def retrieve_liked_posts(request):
                     'id': post.id,
                     'title': post.title,
                     'liked': True if Like.objects.filter(content_id=post.id, user=request.user).exists() else False,
+                    'liked': post.likes,
+                    'views': post.views,
                     'url': reverse('blog:individual_post', args=[post.id]),
                     'author': {
                         'id': post.author.id,
