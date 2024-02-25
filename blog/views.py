@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import EmptyResultSet, ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
+from django.db import transaction
 
 from .models import (
     Post,
@@ -52,16 +53,16 @@ def get_next_posts(request):
                 {
                     'id': post.id,
                     'title': post.title,
-                    'liked': post.likes,
+                    'likes': post.likes,
                     'views': post.views,
+                    'liked': True if Like.objects.filter(content_id=post.id, user=request.user).exists() else False,
                     'url': reverse('blog:individual_post', args=[post.id]),
                     'author': {
                         'id': post.author.id,
                         'first_name': post.author.first_name,
                         'last_name': post.author.last_name,
                         'url': reverse('users:user_profile', args=[post.author.id])
-                    },
-                    'liked': True if Like.objects.filter(content_id=post.id, user=request.user).exists() else False,
+                    }
                 } for post in next_posts
             ]
         })
@@ -76,7 +77,7 @@ def get_next_posts(request):
             'success': False,
             'message': 'Error occured when retrieving posts',
             'error_code': '002',
-            'error_message': f'{ e }'
+            'error_message': str(e)
         })
 
 
@@ -120,14 +121,14 @@ def retrieve_comments(request, post_id):
                 {
                     'id': comment.id,
                     'content': comment.content,
-                    'liked': comment.likes,
+                    'likes': comment.likes,
+                    'liked': True if Like.objects.filter(content_id=comment.id, user=request.user).exists() else False,
                     'author': {
                         'id': comment.author.id,
                         'first_name': comment.author.first_name,
                         'last_name': comment.author.last_name,
                         'url': reverse('users:user_profile', args=[comment.author.id])
-                    },
-                    'liked': True if Like.objects.filter(content_id=comment.id, user=request.user).exists() else False,
+                    }
                 } for comment in comments
             ]
         })
@@ -148,7 +149,7 @@ def retrieve_comments(request, post_id):
             'success': False,
             'message': 'Error occured when retrieving comments',
             'error_code': '002',
-            'error_message': f'{ e }'
+            'error_message': str(e)
         })
 
 
@@ -210,7 +211,7 @@ def like_post(request, post_id):
 @login_required
 def dislike_post(request, post_id):
     try:
-        post = Post.objects.get(id=post_id)
+        post = get_object_or_404(Post, id=post_id)
         like = Like.objects.filter(user=request.user, content_id=post_id).first()
         if like:
             if like.user != request.user:
@@ -234,7 +235,7 @@ def dislike_post(request, post_id):
                 'message': 'You have not liked this post',
                 'error_code': '002'
             })
-    except Post.DoesNotExist:
+    except ObjectDoesNotExist:
         return JsonResponse({
             'success': False,
             'message': 'Post does not exist',
@@ -325,6 +326,7 @@ def retrieve_favorite(request):
                 {
                     'id': favorite.post.id,
                     'title': favorite.post.title,
+                    'likes': favorite.post.likes,
                     'liked': True if Like.objects.filter(content_id=favorite.post.id, user=request.user).exists() else False,
                     'url': reverse('blog:individual_post', args=[favorite.post.id]),
                     'author': {
@@ -348,7 +350,7 @@ def retrieve_favorite(request):
             'success': False,
             'message': 'Error occured when retrieving favorites',
             'error_code': '002',
-            'error_message': f'{ e }'
+            'error_message': str(e)
         })
 
 
@@ -385,7 +387,7 @@ def add_to_favorites(request, post_id):
             'success': False,
             'message': 'Error occured when adding to favorites',
             'error_code': '003',
-            'error_message': f'{ e }'
+            'error_message': str(e)
         })
 
 
@@ -536,7 +538,7 @@ def edit_comment(request, comment_id):
             'success': False,
             'message': 'Error occured when editing comment',
             'error_code': '003',
-            'error_message': f'{ e }'
+            'error_message': str(e)
         })
 
 
@@ -579,7 +581,7 @@ def delete_comment(request, comment_id):
             'success': False,
             'message': 'Error occured when deleting comment',
             'error_code': '003',
-            'error_message': f'{ e }'
+            'error_message': str(e)
         })
 
 
@@ -622,7 +624,7 @@ def like_comment(request, comment_id):
             'success': False,
             'message': 'Error occured when liking comment',
             'error_code': '003',
-            'error_message': f'{ e }'
+            'error_message': str(e)
         })
 
 
@@ -667,7 +669,7 @@ def dislike_comment(request, comment_id):
             'success': False,
             'message': 'Error occured when disliking post',
             'error_code': '003',
-            'error_message': f'{ e }'
+            'error_message': str(e)
         })
 
 
@@ -725,9 +727,9 @@ def retrieve_liked_posts(request):
                 {
                     'id': post.id,
                     'title': post.title,
-                    'liked': True if Like.objects.filter(content_id=post.id, user=request.user).exists() else False,
-                    'liked': post.likes,
+                    'likes': post.likes,
                     'views': post.views,
+                    'liked': True if Like.objects.filter(content_id=post.id, user=request.user).exists() else False,
                     'url': reverse('blog:individual_post', args=[post.id]),
                     'author': {
                         'id': post.author.id,
@@ -798,6 +800,7 @@ def retrieve_liked_comments(request):
                 {
                     'id': comment.id,
                     'content': comment.content,
+                    'likes': comment.likes,
                     'liked': True if Like.objects.filter(content_id=comment.id, user=request.user).exists() else False,
                     'author': {
                         'id': comment.author.id,
@@ -959,7 +962,7 @@ def retrieve_all_notifications(request):
                 {
                     'id': notification.id,
                     'content': notification.notification_content,
-                    'url': reverse('blog:individual_post', args=[notification.content_id]) if notification.content_type == blog_type else f"{ reverse('blog:individual_post', args=[notification.content_object.post.id]) }#comment-{ notification.content_id }",
+                    'url': reverse('blog:individual_post', args=[notification.content_id]) if notification.content_type == blog_type else reverse('blog:individual_post', args=[notification.content_object.post.id]),
                     'viewed': notification.viewed
                 }
                 for notification in notifications
@@ -975,6 +978,37 @@ def retrieve_all_notifications(request):
         return JsonResponse({
             'success': False,
             'message': 'Error occurred when retrieving notifications',
+            'error_code': '003',
+            'error_message': str(e)
+        })
+
+
+"""
+    This is a view function for marking all notifications as read
+    It uses no forms
+    It returns a json response
+"""
+@login_required
+def mark_all_read(request):
+    try:
+        with transaction.atomic():
+            count = Notification.objects.filter(user=request.user, viewed=False).update(viewed=True)
+            if count > 0:
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Notifications marked as read',
+                    'error_code': None
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No unread notifications to mark as read',
+                    'error_code': '001'
+                })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Error occurred when marking all notifications as read',
             'error_code': '003',
             'error_message': str(e)
         })

@@ -1566,10 +1566,10 @@ class TestLikedCommentsPage(TestCase):
 
 
 """
-    Test the add to test the retrieve liked posts view
+    Test the retrieve comments view
     Test the response code => 302/200
     Test template used => None
-    Test json respnse
+    Test json response
 """
 class TestRetrieveComments(TestCase):
     def setUp(self) -> None:

@@ -41,13 +41,11 @@ class RegisterForm(UserCreationForm):
             }),
             'password1': forms.PasswordInput(attrs={
                 'autofocus': False,
-                'placeholder': 'Password',
                 'class': 'form-control form-password1',
             }),
             'password2': forms.PasswordInput(attrs={
                 'autofocus': False,
-                'placeholder': 'Password',
-                'class': 'form-control form-password1',
+                'class': 'form-control form-password2',
             })
         }
 

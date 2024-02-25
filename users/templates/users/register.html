@@ -10,19 +10,43 @@
         <form method="post" action="{% url 'users:register' %}" class="form">
             {% csrf_token %}
             {% for field in form %}
-                <div class="form-group">
-                    {{ field.label_tag }}
-                    {{ field }}
-                    {% if field.help_text %}
-                        <a href="javascript:void(0)" class="alt-link">Help text</a>
-                        <small class="form-text text-muted">{{ field.help_text }}</small>
-                    {% endif %}
-                    {% for error in field.errors %}
-                        <small class="form-text text-danger">{{ error }}</small>
-                    {% endfor %}
+                <div class="form-group-container">
+                    <div class="form-group">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.field.widget.input_type == 'password' %}
+                            <div class="password-strength-container hidden">
+                                <div class="password-strength-bar"></div>
+                            </div>
+                            {% if field.name == 'password1' %}
+                            <a href="javascript:void(0)" class="help-text-link link-password1">Need help?</a>
+                            <small class="form-text hidden help-text">
+                                <ul class="help-text-list">
+                                    <li class="invalid" id="length-help">Password must be longer than 8 characters</li>
+                                    <li class="invalid" id="uppercase-help">Password must contain at least one uppercase character</li>
+                                    <li class="invalid" id="lowercase-help">Password must contain at least one lowercase character</li>
+                                    <li class="invalid" id="special-help">Password must contain at least one special character</li>
+                                    <li class="invalid" id="number-help">Password must contain at least one numeric character</li>
+                                </ul>
+                            </small>
+                            {% else %}
+                                <a href="javascript:void(0)" class="help-text-link link-password2">Need help?</a>
+                                <small class="form-text hidden help-text">
+                                    <ul class="help-text-list">
+                                        <li class="invalid" id="password-match-help">Password should match</li>
+                                    </ul>
+                                </small>
+                            {% endif %}
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <small class="form-text text-danger">{{ error }}</small>
+                        {% endfor %}
+                    </div>
                 </div>
             {% endfor %}
-            <button type="submit" class="form-button submit-button">Register</button>
+            <div class="form-group-container">
+                <button tabindex="0" type="submit" class="form-button submit-button">Register</button>
+            </div>
         </form>
     </div>
 {% endblock content %}
