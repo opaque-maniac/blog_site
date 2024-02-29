@@ -113,11 +113,17 @@ function handlePassword2(event) {
     }
 }
 
-// Function to handle when help text has been clicked
+// Function to handle when help text link has been clicked
 function handleHelpClick(event) {
-    let field = event.target;
-    let helpText = field.nextElementSibling;
+    let link = event.target;
+    let helpText = link.nextElementSibling;
     helpText.classList.toggle('hidden');
+    if (helpText.classList.contains('hidden')) {
+        link.innerHTML = 'Need help?';
+    } else {
+        link.innerHTML = 'Hide help';
+    }
+    
 }
 
 // Function to show and display the password strength container
