@@ -71,6 +71,3 @@ class ProfileDetailView(generics.RetrieveAPIView):
 
     def get_object(self):
         return get_object_or_404(get_user_model(), id=self.kwargs['pk'])
-    
-    def get_permissions(self):
-        return [permissions.IsAuthenticated(), IsOwner()]
