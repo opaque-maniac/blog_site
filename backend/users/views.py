@@ -36,7 +36,7 @@ class LoginAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get_permissions(self):
-        return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
 
 # Profile API
 class ProfileAPIView(APIView):
@@ -63,7 +63,7 @@ class ProfileAPIView(APIView):
     def get_permissions(self):
         if self.request.method in ['PUT', 'DELETE']:
             return [permissions.IsAuthenticated(), IsOwner()]
-        return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
     
 # Other users API
 class ProfileDetailView(generics.RetrieveAPIView):
@@ -71,3 +71,6 @@ class ProfileDetailView(generics.RetrieveAPIView):
 
     def get_object(self):
         return get_object_or_404(get_user_model(), id=self.kwargs['pk'])
+    
+    def get_permissions(self):
+        return [permissions.IsAuthenticated(), IsOwner()]
