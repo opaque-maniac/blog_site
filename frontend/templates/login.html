@@ -1,0 +1,22 @@
+<template id="login">
+    <h2>Login</h2>
+    <form method="post" data-url="http://127.0.0.1:8000/api/auth/login/">
+        <div class="form-group">
+            <label for="email">
+                Email:
+                <input type="email" name="email" id="email">
+            </label>
+        </div>
+        <div class="form-group">
+            <label for="password">
+                Password:
+                <input type="password" name="password" id="password">
+            </label>
+        </div>
+        <button type="submit">Login</button>
+
+        <div class="alt-link">
+            <a href="/register">Register instead!</a>
+        </div>
+    </form>
+</template>
