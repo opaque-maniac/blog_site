@@ -1,16 +1,18 @@
 from django.urls import path
 
 from .views import (
-    RegisterView,
+    Registerview,
     LoginView,
-    ProfileView,
+    UserProfileView,
+    UserPostsView,
 )
 
 app_name = 'users'
 
 # URLs for the users application
 urlpatterns = [
-    path('register/', RegisterView.as_view(), name='register'),
+    path('register/', Registerview.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
-    path('profile/<int:pk>/', ProfileView.as_view(), name='profile'),
+    path('profile/<int:pk>/', UserProfileView.as_view(), name='profile'),
+    path('profile/<int:pk>/posts/', UserPostsView.as_view(), name='profile-posts'),
 ]

@@ -6,7 +6,7 @@ from rest_framework import (
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from django.db import F
+from django.db.models import F
 
 from .serializers import (
     PostReadSerializer,
@@ -31,7 +31,7 @@ class PostListView(generics.ListCreateAPIView):
         context['request'] = self.request
         return context
 	
-    def get_serializer_classes(self):
+    def get_serializer_class(self):
         if self.request.method == 'GET':
             return PostReadSerializer
         return PostWriteSerializer
@@ -47,39 +47,37 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         context['request'] = self.request
         return context
 	
-    def get_serializer_classes(self):
+    def get_serializer_class(self):
         if self.request.method == 'GET':
             return PostReadSerializer
         return PostWriteSerializer
 	
     def get_object(self):
         obj_id = self.kwargs.get('pk', None)
-        post = get_object_or_404(Post.objects.select_for_updates().filter(pk=obj_id), id=obj_id)
-        post.likes = F('views') + 1
-        post.save(updated_fields=['views'])
+        Post.objects.filter(pk=obj_id).update(views=F('views') + 1)
+        post = get_object_or_404(Post, pk=obj_id)
         return post
 		
     def get_permissions(self):
-        if self.request.method in ['PUT', 'DELETE']:
-            return [permissions.IsAuthenticated(), IsAuthorOrReadOnly()]
-        return [permissions.IsAuthenticated()]
+        if self.request.method == 'GET':
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), IsAuthorOrReadOnly()]
+        
 
 # View for liking posts and disliking posts
 # Supports PUT, DELETE
 class LikeAndDislikePost(APIView):
     def put(self, request, pk):
-        post = get_object_or_404(Post.objects.select_for_updates().filter(pk=pk), id=pk)
-        post.likes = F('likes') + 1
-        post.save(updated_fields=['likes'])
+        Post.objects.filter(pk=pk).update(likes=F('likes') + 1)
+        post = get_object_or_404(Post, pk=pk)
         return Response(
 			PostReadSerializer(post).data,
 			status=status.HTTP_200_OK
 		)
     
     def delete(self, request, pk):
-        post = get_object_or_404(Post.objects.select_for_updates().filter(pk=pk), id=pk)
-        post.likes = F('likes') - 1 if post.likes > 0 else 0
-        post.save(updated_fields=['likes'])
+        Post.objects.filter(pk=pk).update(likes=F('likes') - 1 if F('likes') > 0 else 0)
+        post = get_object_or_404(Post, pk=pk)
         return Response(
 			PostReadSerializer(post).data,
 			status=status.HTTP_200_OK
@@ -109,42 +107,38 @@ class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['request'] = self.request
-        context['post'] = get_object_or_404(Post, pk=self.kwargs.get('post_pk', None))
-        return context
+        context['post'] = get_object_or_404(Post, pk=self.kwargs.get('pk', None))
     
     def get_serializer_class(self):
         if self.request.method == 'GET':
             return CommentReadSerializer
         return CommentWriteSerializer
     
+    def get_object(self):
+        post_id = self.kwargs.get('pk', None)
+        comment_id = self.kwargs.get('comment_pk', None)
+        Comment.objects.filter(post=post_id, pk=comment_id).update(views=F('views') + 1)
+        comment = get_object_or_404(Comment, pk=comment_id)
+        return comment
+    
     def get_permissions(self):
         if self.request.method == 'GET':
             return [permissions.IsAuthenticated()]
         return [permissions.IsAuthenticated(), IsAuthorOrReadOnly()]
-    
-    def get_object(self):
-        obj_id = self.kwargs.get('pk', None)
-        post_id = self.kwargs.get('post_pk', None)
-        comment =  get_object_or_404(Comment.objects.select_for_update().filter(post=post_id), id=obj_id)
-        comment.views = F('views') + 1
-        comment.save(updated_fields=['views'])
-        return comment
 
 # View for liking and disliking a comment
 class LikeAndDislikeComment(APIView):
-    def put(self, request, post_pk, pk):
-        comment = get_object_or_404(Comment.objects.select_for_update().filter(post=post_pk), id=pk)
-        comment.likes = F('likes') + 1
-        comment.save(updated_fields=['likes'])
+    def put(self, request, pk, comment_pk):
+        Comment.objects.filter(post=pk, id=comment_pk).update(likes=F('likes') + 1)
+        comment = get_object_or_404(Comment, comment_pk=pk)
         return Response(
             CommentReadSerializer(comment).data,
             status=status.HTTP_200_OK
         )
     
     def delete(self, request, post_pk, pk):
-        comment = get_object_or_404(Comment.objects.select_for_update().filter(post=post_pk), id=pk)
-        comment.likes = F('likes') - 1 if comment.likes > 0 else 0
-        comment.save(updated_fields=['likes'])
+        Comment.objects.filter(post=post_pk, id=pk).update(likes=F('likes') - 1 if F('likes') > 0 else 0)
+        comment = get_object_or_404(Comment, pk=pk)
         return Response(
             CommentReadSerializer(comment).data,
             status=status.HTTP_200_OK

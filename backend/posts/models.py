@@ -32,8 +32,8 @@ class Comment(models.Model):
     likes = models.IntegerField(default=0)
     
     class Meta:
-        verbose_name=_('post')
-        verbose_name_plural=_('posts')
+        verbose_name=_('comment')
+        verbose_name_plural=_('comments')
 
     def __str__(self):
         return f'{ self.id } -> { self.post.id } -> { self.author.first_name }'

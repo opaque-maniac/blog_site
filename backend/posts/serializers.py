@@ -1,9 +1,17 @@
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
 
 from .models import Post, Comment
 
+# Author serializer
+class AuthorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ['id', 'first_name', 'last_name']
+
 # Post serializer for GET
 class PostReadSerializer(serializers.ModelSerializer):
+    author = AuthorSerializer()
     class Meta:
         model = Post
         fields = '__all__'
@@ -31,6 +39,7 @@ class PostWriteSerializer(serializers.ModelSerializer):
 
 # Comment serializer for GET
 class CommentReadSerializer(serializers.ModelSerializer):
+    author = AuthorSerializer()
     class Meta:
         model = Comment
         fields = '__all__'
@@ -42,8 +51,11 @@ class CommentWriteSerializer(serializers.ModelSerializer):
         fields = ['content', 'author', 'post']
         extra_kwargs = {
             'author': {
+                'required': False,
+            },
+            'post': {
                 'required': False
-                }
+            }
             }
 
         def create(self, validated_data):
