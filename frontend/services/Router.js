@@ -28,9 +28,15 @@ const Router = {
       });
     });
 
-    Router.go("/");
+    window.addEventListener("popstate", () => {
+      const state = window.history.state;
+      if (state) {
+        Router.go(state.route, false, state.posX, state.posY);
+      }
+    });
   },
   go: (route, addToHistory = true, posX = 0, posY = 0) => {
+    console.log(`Going to: ${route}`);
     if (addToHistory) {
       window.history.pushState(
         {
@@ -47,7 +53,12 @@ const Router = {
     Router.load(route);
   },
   load: (route) => {
-    loadRoute(route);
+    try {
+      loadRoute(route);
+    } catch (err) {
+      console.error(err);
+      Router.go("/error/500");
+    }
   },
 };
 

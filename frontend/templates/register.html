@@ -1,6 +1,6 @@
 <template id="register">
     <h2>Login</h2>
-    <form method="post" data-url="http://127.0.0.1:8000/api/auth/register/">
+    <form method="post" id="register-form">
         <div class="form-group">
             <label for="email">
                 Email:
@@ -10,13 +10,12 @@
         <div class="form-group">
             <label for="first_name">
                 First Name:
-                <input type="text" name="first_name" id="first_name">
+                <input type="text" name="first_name" id="first_name" />
             </label>
         </div>
         <div class="form-group">
             <label for="last_name">
-                Last Name:
-                <input type="text" name="last_name id=" last_name">
+                Last Name: <input type="text" name="last_name id=" last_name">
             </label>
         </div>
         <div class="form-group">
@@ -31,7 +30,7 @@
                 <input type="password" name="password2" id="password2" />
             </label>
         </div>
-        <button type="submit">Register</button>
+        <button type="submit" data-url="http://127.0.0.1:8000/api/auth/register/">Register</button>
 
         <div class="alt-link">
             <a href="/login">Login instead!</a>

@@ -60,7 +60,7 @@ nav#navbar {
   padding-bottom: 1rem;
   max-height: calc(90vh - 10px - 3rem);
   left: -100%;
-  transition: left 0.5s ease;
+  transition: left 0.25s linear;
 }
 
 nav#navbar a {

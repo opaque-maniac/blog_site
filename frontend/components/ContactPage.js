@@ -3,21 +3,7 @@ class ContactPage extends HTMLElement {
     super();
     this.root = this.attachShadow({ mode: "open" });
 
-    // Fetch the html
-    fetch("templates/contact.html")
-      .then((request) => {
-        if (!request.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return request.text();
-      })
-      .then((html) => {
-        const tempDiv = document.createElement("div");
-        tempDiv.innerHTML = html;
-        this.root.appendChild(tempDiv.content.cloneNode(true));
-      });
-
-    // Fetch the css
+    // fetch the css
     fetch("static/styles/contact.css")
       .then((response) => {
         if (!response.ok) {
@@ -27,27 +13,37 @@ class ContactPage extends HTMLElement {
       })
       .then((css) => {
         const style = document.createElement("style");
-        style.textContent = style;
-        this.root.appendChild(style);
+        style.textContent = css;
       });
 
-    // Fetch javascript
-    fetch("static/scripts/contact.js")
+    // Fetching the template
+    fetch("templates/contact.html")
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
         return response.text();
       })
-      .then((js) => {
-        const script = document.createElement("script");
-        script.textContent = js;
-        this.root.appendChild(script);
+      .then((html) => {
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = html;
+        const homeTemplate = tempDiv.querySelector("#contact");
+        this.root.appendChild(homeTemplate.content.cloneNode(true));
       });
-  }
 
-  connectedCallback() {
-    console.log("Contact Page connected");
+    // Fetching the javascript
+    fetch("static/scripts/contact.js")
+      .then((resposne) => {
+        if (!resposne.ok) {
+          throw new Error("Network response was not okay");
+        }
+        return resposne.text();
+      })
+      .then((js) => {
+        const scripts = document.createElement("script");
+        scripts.textContent = js;
+        this.root.appendChild(scripts);
+      });
   }
 }
 
