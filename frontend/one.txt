@@ -1,0 +1,42 @@
+.
+├── app.js
+├── components
+│   └── Error404.js
+├── index.html
+├── main.js
+├── one.txt
+├── services
+│   ├── App.js
+│   ├── ManageNav.js
+│   ├── Permissions.js
+│   ├── Router.js
+│   └── RouterLoad.js
+├── styles
+│   ├── about.css
+│   ├── base.css
+│   ├── contect.css
+│   ├── error404.css
+│   ├── home.css
+│   ├── individualPost.css
+│   ├── login.css
+│   ├── main.css
+│   ├── newPost.css
+│   ├── profile.css
+│   ├── register.css
+│   ├── terms.css
+│   └── updateProfile.css
+└── templates
+    ├── about.html
+    ├── contact.html
+    ├── error404.html
+    ├── error500.html
+    ├── home.html
+    ├── individualPost.html
+    ├── login.html
+    ├── newPost.html
+    ├── profile.html
+    ├── register.html
+    ├── terms.html
+    └── updateProfile.html
+
+5 directories, 35 files

@@ -1,16 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./styles/main.css">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./static/styles/main.css" />
     <script type="module" src="./app.js" defer></script>
+    <script
+      src="./static/scripts/main.js"
+      type="text/javascript"
+      defer
+    ></script>
+    <!-- Font awsome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <!-- Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Dancing+Script&family=Inter&family=Josefin+Sans:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Dancing+Script&family=Inter&family=Josefin+Sans:ital@0;1&family=Tauri&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Dancing+Script&family=Inter&family=Josefin+Sans:ital@0;1&family=Roboto+Mono:ital@0;1&family=Tauri&display=swap"
+      rel="stylesheet"
+    />
     <title>Blogger</title>
-</head>
+  </head>
 
-<body>
-
-</body>
-
+  <body>
+    <header>
+      <div id="head">
+        <a href="/" id="logo" class="header-link">
+          <span class="fa-sharp fa-solid fa-book"></span>
+        </a>
+        <a href="javascript:void(0)" class="header-link" id="menu">
+          <span id="menuIcon" class="fa-solid fa-ellipsis-vertical"></span>
+          <span id="closeIcon" class="fa-regular fa-circle-xmark hidden"></span>
+        </a>
+      </div>
+      <nav id="navbar">
+        <ul>
+          <li>
+            <a href="/" class="nav-link" title="Home">
+              <span class="fa-solid fa-house"></span>
+            </a>
+          </li>
+          <li>
+            <a href="/about" class="nav-link" title="About">
+              <span class="fa-solid fa-address-card"></span>
+            </a>
+          </li>
+          <li>
+            <a href="/contact" class="nav-link" title="Contact">
+              <span class="fa-solid fa-phone"></span>
+            </a>
+          </li>
+          <li>
+            <a href="/terms" class="nav-link" title="Terms & Conditions">
+              <span class="fa-solid fa-scale-balanced"></span>
+            </a>
+          </li>
+          <li>
+            <a href="/posts" class="nav-link authenticated" title="All posts">
+              <span class="fa-solid fa-list-ul"></span>
+            </a>
+          </li>
+          <li>
+            <a
+              href="/posts/new"
+              class="nav-link authenticated"
+              title="New post"
+            >
+              <span class="fa-solid fa-plus"></span>
+            </a>
+          </li>
+          <li>
+            <a href="/profile" class="nav-link authenticated" title="Profile">
+              <span class="fa-solid fa-user"></span>
+            </a>
+          </li>
+          <li>
+            <a href="/explore" class="nav-link authenticated" title="Explore">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </a>
+          </li>
+          <li>
+            <a href="/logout" class="nav-link authenticated">Logout</a>
+          </li>
+          <li>
+            <a href="/login" class="nav-link not-authenticated">Login</a>
+          </li>
+          <li>
+            <a href="/register" class="nav-link not-authenticated">Register</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+    <main></main>
+  </body>
 </html>

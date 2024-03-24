@@ -1,0 +1,101 @@
+/* For the header */
+header div#head {
+  display: flex;
+  justify-content: center;
+  gap: 50vw;
+  align-items: center;
+  background-color: #333;
+  width: 80vw;
+  position: fixed;
+  top: 10px;
+  z-index: 2;
+  left: 10vw;
+  height: 3rem;
+  border-radius: 10px;
+}
+
+/* For the header icons */
+header div#head span {
+  font-size: 1.7rem;
+  color: red;
+  transition: display 0.5s ease;
+  display: inline-block;
+  width: 1rem;
+}
+header div#head span:hover {
+  color: #fff;
+}
+
+/* For navbar links */
+.nav-link {
+  display: block;
+}
+
+/* For the navbar list */
+nav#navbar ul,
+li {
+  padding: 0;
+  margin: 0;
+}
+nav#navbar ul {
+  list-style-type: none;
+}
+nav#navbar li {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* For the navbar */
+nav#navbar {
+  position: fixed;
+  border-top: 1px solid #fff;
+  top: calc(3rem + 10px);
+  width: 80vw;
+  background-color: #333;
+  border-top: 1px solid #fff;
+  padding-top: 2rem;
+  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 10px;
+  padding-bottom: 1rem;
+  max-height: calc(90vh - 10px - 3rem);
+  left: -100%;
+  transition: left 0.5s ease;
+}
+
+nav#navbar a {
+  font-size: 1.2rem;
+  color: red;
+  margin-bottom: 1rem;
+}
+nav#navbar a:hover {
+  color: #fff;
+}
+
+main {
+  height: 200vh;
+  margin-top: calc(5rem + 20px);
+  border-top: red;
+}
+
+/* Class to hide elements */
+.hidden {
+  display: none !important;
+}
+
+/* class for the header when navbar is in view */
+.header-sticky {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* class for the navbar when displayed and hidden */
+.nav-sticky {
+  left: 10vw !important;
+}
+
+@media screen and (max-width: 480px) {
+  header div#head {
+    gap: calc(80vw - 7rem);
+  }
+}
